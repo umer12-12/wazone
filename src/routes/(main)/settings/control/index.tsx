@@ -217,5 +217,3 @@ const Control = memo(() => {
 });
 
 export default Control;
-
-export default Control;
