@@ -35,22 +35,22 @@ export function defineConfig(config: CustomNextConfig) {
         // On Vercel (serverless), including native bindings can easily exceed function size limits.
         ...(buildWithDocker
           ? [
-              // Exclude SPA/desktop/mobile build artifacts from serverless functions
-              'public/spa/**',
-              'dist/desktop/**',
-              'dist/mobile/**',
+            // Exclude SPA/desktop/mobile build artifacts from serverless functions
+            'public/spa/**',
+            'dist/desktop/**',
+            'dist/mobile/**',
 
-              'packages/database/migrations/**',
+            'packages/database/migrations/**',
 
-              // Ensure native bindings are included in standalone output.
-              // `@napi-rs/canvas` is loaded via dynamic `require()` (see packages/file-loaders),
-              // which may not be picked up by Next.js output tracing.
-              'node_modules/@napi-rs/canvas/**/*',
-              'node_modules/@napi-rs/canvas-*/**/*',
-              // pnpm real package locations (including platform-specific bindings with `.node`)
-              'node_modules/.pnpm/@napi-rs+canvas*/**/*',
-              'node_modules/.pnpm/@napi-rs+canvas-*/**/*',
-            ]
+            // Ensure native bindings are included in standalone output.
+            // `@napi-rs/canvas` is loaded via dynamic `require()` (see packages/file-loaders),
+            // which may not be picked up by Next.js output tracing.
+            'node_modules/@napi-rs/canvas/**/*',
+            'node_modules/@napi-rs/canvas-*/**/*',
+            // pnpm real package locations (including platform-specific bindings with `.node`)
+            'node_modules/.pnpm/@napi-rs+canvas*/**/*',
+            'node_modules/.pnpm/@napi-rs+canvas-*/**/*',
+          ]
           : []),
       ],
     },
@@ -363,23 +363,48 @@ export function defineConfig(config: CustomNextConfig) {
       'ajv',
       'oidc-provider',
       '@grpc/grpc-js',
+      '@grpc/proto-loader',
       '@opentelemetry/sdk-node',
+      '@opentelemetry/instrumentation',
+      '@opentelemetry/auto-instrumentations-node',
+      '@opentelemetry/instrumentation-undici',
       '@opentelemetry/exporter-logs-otlp-grpc',
     ],
 
-    transpilePackages: ['mermaid', 'better-auth-harmony'],
+    transpilePackages: ['mermaid', 'better-auth-harmony', '@lobechat/database'],
     turbopack: {
       rules: {
         ...(isTest
           ? void 0
           : codeInspectorPlugin({
-              bundler: 'turbopack',
-              hotKeys: ['altKey', 'ctrlKey'],
-            })),
+            bundler: 'turbopack',
+            hotKeys: ['altKey', 'ctrlKey'],
+          })),
         '*.md': {
           as: '*.js',
           loaders: ['raw-loader'],
         },
+      },
+      resolveAlias: {
+        fs: { browser: './src/libs/empty.ts' },
+        path: { browser: './src/libs/empty.ts' },
+        net: { browser: './src/libs/empty.ts' },
+        tls: { browser: './src/libs/empty.ts' },
+        http: { browser: './src/libs/empty.ts' },
+        https: { browser: './src/libs/empty.ts' },
+        os: { browser: './src/libs/empty.ts' },
+        stream: { browser: './src/libs/empty.ts' },
+        events: { browser: './src/libs/empty.ts' },
+        dns: { browser: './src/libs/empty.ts' },
+        child_process: { browser: './src/libs/empty.ts' },
+        perf_hooks: { browser: './src/libs/empty.ts' },
+        'zlib-sync': { browser: './src/libs/empty.ts' },
+        '@lobechat/observability-otel/node': { browser: './src/libs/empty.ts' },
+        '@opentelemetry/sdk-node': { browser: './src/libs/empty.ts' },
+        '@opentelemetry/instrumentation': { browser: './src/libs/empty.ts' },
+        '@opentelemetry/auto-instrumentations-node': { browser: './src/libs/empty.ts' },
+        '@opentelemetry/instrumentation-undici': { browser: './src/libs/empty.ts' },
+        '@opentelemetry/exporter-logs-otlp-grpc': { browser: './src/libs/empty.ts' },
       },
       ...config.turbopack,
     },
@@ -387,7 +412,7 @@ export function defineConfig(config: CustomNextConfig) {
     typescript: {
       ignoreBuildErrors: true,
     },
-    webpack: (config, { isServer }) => {
+    webpack: (config, { isServer, nextRuntime }) => {
       config.resolve.alias = {
         ...config.resolve.alias,
         bufferutil: false,
@@ -396,10 +421,12 @@ export function defineConfig(config: CustomNextConfig) {
         'zlib-sync': false,
       };
 
-      if (!isServer) {
+      if (!isServer || nextRuntime === 'edge') {
         config.resolve.alias = {
           ...config.resolve.alias,
           child_process: false,
+          crypto: false,
+          diagnostics_channel: false,
           dns: false,
           events: false,
           fs: false,
@@ -407,6 +434,7 @@ export function defineConfig(config: CustomNextConfig) {
           https: false,
           net: false,
           os: false,
+          path: false,
           perf_hooks: false,
           stream: false,
           tls: false,
@@ -415,6 +443,8 @@ export function defineConfig(config: CustomNextConfig) {
         config.resolve.fallback = {
           ...config.resolve.fallback,
           child_process: false,
+          crypto: false,
+          diagnostics_channel: false,
           dns: false,
           events: false,
           fs: false,
@@ -422,6 +452,7 @@ export function defineConfig(config: CustomNextConfig) {
           https: false,
           net: false,
           os: false,
+          path: false,
           perf_hooks: false,
           stream: false,
           tls: false,

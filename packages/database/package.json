@@ -5,6 +5,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./schemas": "./src/schemas/index.ts",
+    "./models/*": "./src/models/*.ts",
     "./test-utils": "./tests/test-utils.ts"
   },
   "scripts": {
@@ -14,6 +15,7 @@
     "test:server-db": "vitest run --config vitest.config.server.mts"
   },
   "dependencies": {
+    "@paralleldrive/cuid2": "^2.2.2",
     "@lobechat/agent-templates": "workspace:*",
     "@lobechat/business-const": "workspace:*",
     "@lobechat/const": "workspace:*",
